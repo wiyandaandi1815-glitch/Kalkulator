@@ -1451,7 +1451,7 @@ export default function HomePage() {
           <Separator className="my-6 bg-emerald-700/50" />
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-emerald-300">
-            <p>&copy; {new Date().getFullYear()} BAZNAS Kota Lubuk Linggau. Hak Cipta Dilindungi.</p>
+            <p>&copy; {new Date().getFullYear()} BAZNAS Kota Lubuk Linggau. Hak Cipta Dilindungi.Andi Wiyanda.</p>
             <p className="text-xs">
               Fatwa MUI No. 3/2003 &bull; SK BAZNAS RI &bull; Pendapat Ulama Kontemporer
             </p>
