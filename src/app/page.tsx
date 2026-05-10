@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Wallet, PiggyBank, Store, Coins, Wheat, Building2, TrendingUp,
@@ -243,7 +243,7 @@ function ZakatPenghasilanForm({ onCalculate }: { onCalculate: (data: Record<stri
         <AlertDescription className="text-emerald-700 text-sm">
           (Penghasilan Utama + Penghasilan Lain - Hutang) × 2.5%
           <br />
-          <span className="text-xs">Nisab: Rp 7.640.144/bulan atau Rp 91.681.728/tahun (Sesuai SK BAZNAS)</span>
+          <span className="text-xs">Nisab: {nisabLoading ? '...' : nisabData ? `Rp ${nisabData.nisabBulanan.toLocaleString('id-ID')}` : 'Rp 7.640.144'}/bulan atau Rp 91.681.728/tahun (Sesuai SK BAZNAS)</span>
         </AlertDescription>
       </Alert>
 
@@ -320,7 +320,7 @@ function ZakatTabunganForm({ onCalculate }: { onCalculate: (data: Record<string,
         <AlertDescription className="text-teal-700 text-sm">
           (Saldo Akhir - Bunga Bank) × 2.5%
           <br />
-          <span className="text-xs">Nisab: Setara 85 gram emas (Rp 148.750.000)</span>
+          <span className="text-xs">Nisab: Setara 85 gram emas ({nisabLoading ? '...' : nisabData ? `Rp ${nisabData.nisabEmasRupiah.toLocaleString('id-ID')}` : 'Rp 148.750.000'})</span>
         </AlertDescription>
       </Alert>
 
@@ -379,7 +379,7 @@ function ZakatPerdaganganForm({ onCalculate }: { onCalculate: (data: Record<stri
         <AlertDescription className="text-cyan-700 text-sm">
           (Modal + Keuntungan + Piutang - Hutang) × 2.5%
           <br />
-          <span className="text-xs">Nisab: Setara 85 gram emas (Rp 148.750.000)</span>
+          <span className="text-xs">Nisab: Setara 85 gram emas ({nisabLoading ? '...' : nisabData ? `Rp ${nisabData.nisabEmasRupiah.toLocaleString('id-ID')}` : 'Rp 148.750.000'})</span>
         </AlertDescription>
       </Alert>
 
@@ -606,7 +606,7 @@ function ZakatPerusahaanForm({ onCalculate }: { onCalculate: (data: Record<strin
         <AlertDescription className="text-sky-700 text-sm">
           (Aktiva Lancar - Kewajiban Jangka Pendek) × 2.5%
           <br />
-          <span className="text-xs">Nisab: Setara 85 gram emas (Rp 148.750.000)</span>
+          <span className="text-xs">Nisab: Setara 85 gram emas ({nisabLoading ? '...' : nisabData ? `Rp ${nisabData.nisabEmasRupiah.toLocaleString('id-ID')}` : 'Rp 148.750.000'})</span>
         </AlertDescription>
       </Alert>
 
@@ -649,7 +649,7 @@ function ZakatSahamForm({ onCalculate }: { onCalculate: (data: Record<string, st
         <AlertDescription className="text-violet-700 text-sm">
           (Book Value Saham + Dividen) × 2.5%
           <br />
-          <span className="text-xs">Nisab: Setara 85 gram emas (Rp 148.750.000)</span>
+          <span className="text-xs">Nisab: Setara 85 gram emas ({nisabLoading ? '...' : nisabData ? `Rp ${nisabData.nisabEmasRupiah.toLocaleString('id-ID')}` : 'Rp 148.750.000'})</span>
         </AlertDescription>
       </Alert>
 
@@ -859,7 +859,7 @@ function ZakatInvestasiPenyewaanForm({ onCalculate }: { onCalculate: (data: Reco
         <AlertDescription className="text-rose-700 text-sm">
           (Pendapatan Sewa - Biaya Operasional) × 2.5%
           <br />
-          <span className="text-xs">Nisab: Setara 85 gram emas (Rp 148.750.000)</span>
+          <span className="text-xs">Nisab: Setara 85 gram emas ({nisabLoading ? '...' : nisabData ? `Rp ${nisabData.nisabEmasRupiah.toLocaleString('id-ID')}` : 'Rp 148.750.000'})</span>
         </AlertDescription>
       </Alert>
 
@@ -904,7 +904,7 @@ function ZakatProfesiForm({ onCalculate }: { onCalculate: (data: Record<string, 
         <AlertDescription className="text-indigo-700 text-sm">
           (Penghasilan Profesi - Biaya Operasional) × 2.5%
           <br />
-          <span className="text-xs">Nisab: Rp 7.640.144/bulan atau Rp 91.681.728/tahun (Sesuai SK BAZNAS)</span>
+          <span className="text-xs">Nisab: {nisabLoading ? '...' : nisabData ? `Rp ${nisabData.nisabBulanan.toLocaleString('id-ID')}` : 'Rp 7.640.144'}/bulan atau Rp 91.681.728/tahun (Sesuai SK BAZNAS)</span>
         </AlertDescription>
       </Alert>
 
@@ -1039,9 +1039,23 @@ function ZakatResult({ result }: { result: Record<string, unknown> | null }) {
 
 export default function HomePage() {
   const [selectedType, setSelectedType] = useState<string | null>(null);
-  const [result, setResult] = useState<Record<string, unknown> | null>(null);
-  const [isCalculating, setIsCalculating] = useState(false);
-  const { toast } = useToast();
+// State harga emas real-time
+  const [nisabData, setNisabData] = useState<{
+    hargaPerGram: number;
+    nisabEmasRupiah: number;
+    nisabBulanan: number;
+  } | null>(null);
+  const [nisabLoading, setNisabLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/gold-price')
+      .then(r => r.json())
+      .then(d => {
+        if (d.success && d.hargaPerGram > 0) setNisabData(d.nisab);
+      })
+      .catch(() => {})
+      .finally(() => setNisabLoading(false));
+  }, []);
 
   const handleCalculate = useCallback(async (data: Record<string, string | number>) => {
     setIsCalculating(true);
@@ -1171,12 +1185,12 @@ export default function HomePage() {
                   <div className="text-2xl mb-1">⚖️</div>
                   <div className="text-xs text-emerald-200 mb-1">Nisab Emas</div>
                   <div className="font-bold text-lg">85 Gram</div>
-                  <div className="text-xs text-emerald-300">Rp 148.750.000</div>
+                  <div className="text-xs text-emerald-300">{nisabLoading ? '...' : nisabData ? `Rp ${nisabData.nisabEmasRupiah.toLocaleString('id-ID')}` : '{nisabLoading ? '...' : nisabData ? `Rp ${nisabData.nisabEmasRupiah.toLocaleString('id-ID')}` : 'Rp 148.750.000'}'}</div>
                 </div>
                 <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10">
                   <div className="text-2xl mb-1">📅</div>
                   <div className="text-xs text-emerald-200 mb-1">Nisab Bulanan</div>
-                  <div className="font-bold text-lg">Rp 7.640.144</div>
+                  <div className="font-bold text-lg">{nisabLoading ? '...' : nisabData ? `Rp ${nisabData.nisabBulanan.toLocaleString('id-ID')}` : 'Rp 7.640.144'}</div>
                   <div className="text-xs text-emerald-300">Per Bulan</div>
                 </div>
                 <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10">
